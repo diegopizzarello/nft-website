@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.css';
 import styled from 'styled-components';
+import { motion, useAnimation } from "framer-motion";
 
 import useConnect from './hooks/useConnect';
 import useContract from './hooks/useContract';
@@ -42,7 +43,7 @@ const Button = styled.button`
   margin-right: 36px;
 `;
 
-const Background = styled.img`
+const Background = styled(motion.img)`
   opacity: 0.3;
   width: 100%;
   max-width: 550px;
@@ -60,9 +61,41 @@ const CollectionText = styled.span`
   color: white;
 `;
 
+const imageVariant = {
+  rest: {
+    opacity: 0.3,
+    transition: {
+      duration: 0.7,
+      type: "tween",
+      ease: "easeOut",
+    }
+  },
+  loading: {
+    opacity: 1,
+    transition: {
+      duration: 1.7,
+      type: "tween",
+      repeat: 'Infinity',
+      repeatType: "reverse",
+      ease: "circIn",
+      repeatDelay: 0.20,
+    }
+  },
+}
+
 function App() {
   const { connect, account } = useConnect();
-  const nftContract = useContract(CONTRACT_ADDRESS, myEpicNFT.abi)
+  const [isLoading, setIsLoading] = useState(false);
+  const controls = useAnimation();
+  const nftContract = useContract(CONTRACT_ADDRESS, myEpicNFT.abi);
+
+  useEffect(() => {
+    if (isLoading) {
+      controls.start('loading');
+    } else {
+      controls.start('rest');
+    }
+  }, [isLoading])
 
   useEffect(() => {
     nftContract.on("NewNFTMinted", (from, tokenId) => {
@@ -76,8 +109,12 @@ function App() {
     console.log("Going to pop wallet now to pay gas...")
     let nftTxn = await nftContract.makeAnEpicNFT();
 
+    setIsLoading(true);
     console.log("Mining...please wait.")
+
     await nftTxn.wait();
+
+    setIsLoading(false);
 
     console.log(`Mined, see transaction: https://rinkeby.etherscan.io/tx/${nftTxn.hash}`);
   }
@@ -87,11 +124,11 @@ function App() {
       <Header>
         <CollectionContainer>
           <CollectionText>Open collection</CollectionText>
-          <img src={rarible} alt="Rarible" style={{ width: 48 }}/>
+          <img src={rarible} alt="Rarible" style={{ width: 48 }} />
         </CollectionContainer>
         {!account ? <Button onClick={connect}>Connect</Button> : <Button onClick={mintNFT}>Mint</Button>}
       </Header>
-      <Background src={uruguay} />
+      <Background animate={controls} src={uruguay} variants={imageVariant} initial="rest" />
     </Container>
   );
 }
