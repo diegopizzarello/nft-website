@@ -51,15 +51,43 @@ const Background = styled(motion.img)`
   align-self: center;
 `;
 
-const CollectionContainer = styled.div`
+const CollectionContainer = styled(motion.div)`
   display: flex;
-  align-items: center;
+  justify-content: center;
   margin-left: 24px;
+  cursor: pointer;
+  flex-direction: column;
 `;
 
 const CollectionText = styled.span`
   color: white;
 `;
+
+const Underline = styled(motion.div)`
+  height: 2px;
+  background-color: #FFF;
+`;
+
+
+export const underlineMotion = {
+  rest: {
+    width: 0,
+    transition: {
+      duration: 0.45,
+      type: "tween",
+      ease: "easeIn"
+    },
+  },
+  hover: {
+    width: 'auto',
+    visibility: 'visible',
+    transition: {
+      duration: 0.45,
+      type: "tween",
+      ease: "easeOut"
+    }
+  }
+}
 
 const imageVariant = {
   rest: {
@@ -106,7 +134,6 @@ function App() {
   }, [nftContract]);
 
   const mintNFT = async () => {
-    console.log("Going to pop wallet now to pay gas...")
     let nftTxn = await nftContract.makeAnEpicNFT();
 
     setIsLoading(true);
@@ -115,16 +142,22 @@ function App() {
     await nftTxn.wait();
 
     setIsLoading(false);
-
     console.log(`Mined, see transaction: https://rinkeby.etherscan.io/tx/${nftTxn.hash}`);
   }
 
   return (
     <Container>
       <Header>
-        <CollectionContainer>
-          <CollectionText>Open collection</CollectionText>
-          <img src={rarible} alt="Rarible" style={{ width: 48 }} />
+        <CollectionContainer
+          initial="rest"
+          whileHover="hover"
+          onClick={() => window.open(`https://rinkeby.rarible.com/collection/${CONTRACT_ADDRESS}`, "_blank")
+          }>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <CollectionText>Open collection</CollectionText>
+            <img src={rarible} alt="Rarible" style={{ width: 48 }} />
+          </div>
+          <Underline variants={underlineMotion} />
         </CollectionContainer>
         {!account ? <Button onClick={connect}>Connect</Button> : <Button onClick={mintNFT}>Mint</Button>}
       </Header>
