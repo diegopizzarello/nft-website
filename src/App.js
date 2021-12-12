@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import './App.css';
 import styled from 'styled-components';
 import { motion, useAnimation } from "framer-motion";
+import { ToastContainer, toast } from 'react-toastify';
 
 import useConnect from './hooks/useConnect';
 import useContract from './hooks/useContract';
 import myEpicNFT from './contracts/MyEpicNFT.json';
 import uruguay from './assets/uruguay.png';
 import rarible from './assets/rarible.png';
+import 'react-toastify/dist/ReactToastify.css';
 
 const CONTRACT_ADDRESS = '0x2392072242ad1bca1913e21bC3e64F0209246e95';
 
@@ -68,6 +70,11 @@ const Underline = styled(motion.div)`
   background-color: #FFF;
 `;
 
+const OpenNFT = styled.span`
+  margin-left: 4px;
+  text-decoration: underline;
+  color: #43afe9;
+`;
 
 export const underlineMotion = {
   rest: {
@@ -123,15 +130,24 @@ function App() {
     } else {
       controls.start('rest');
     }
-  }, [isLoading])
+  }, [isLoading, controls])
 
   useEffect(() => {
     nftContract.on("NewNFTMinted", (from, tokenId) => {
-      console.log(from, tokenId.toNumber())
-      alert(`Hey there! We've minted your NFT. It may be blank right now. It can take a max of 10 min to show up on OpenSea. Here's the link: <https://rinkeby.rarible.com/token/${CONTRACT_ADDRESS}:${tokenId.toNumber()}>`)
+      console.log(from, tokenId.toNumber());
+      toast(<ToastMessage tokenId={tokenId.toNumber()} />);
     });
     return () => nftContract.removeListener("NewNFTMinted");
   }, [nftContract]);
+
+  const ToastMessage = ({ tokenId }) => (
+    <div>
+      <span>You've got a new NFT!</span>
+      <OpenNFT onClick={() => window.open(`https://rinkeby.rarible.com/token/${CONTRACT_ADDRESS}:${tokenId}`)}>
+        Check it out
+      </OpenNFT>
+    </div>
+  )
 
   const mintNFT = async () => {
     let nftTxn = await nftContract.makeAnEpicNFT();
@@ -159,9 +175,10 @@ function App() {
           </div>
           <Underline variants={underlineMotion} />
         </CollectionContainer>
-        {!account ? <Button onClick={connect}>Connect</Button> : <Button onClick={mintNFT}>Mint</Button>}
+        {!account ? <Button onClick={connect}>Connect</Button> : <Button onClick={mintNFT} disabled={isLoading}>Mint</Button>}
       </Header>
       <Background animate={controls} src={uruguay} variants={imageVariant} initial="rest" />
+      <ToastContainer closeOnClick={false} />
     </Container>
   );
 }
